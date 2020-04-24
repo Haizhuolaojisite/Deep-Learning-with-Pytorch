@@ -1,0 +1,44 @@
+一、参数初始化,下面几种方式,随便选一个,结果基本都差不多.
+
+1. uniform 
+W = np.random.uniform(low=-scale, high=scale, size=shape)
+
+2. glorot_uniform 
+scale = np.sqrt(6. / (shape[0] + shape[1])) 
+np.random.uniform(low=-scale, high=scale, size=shape)
+
+3. 高斯初始化: 
+w = np.random.randn(n) / sqrt(n),n为参数数目 
+
+4. 激活函数为relu的话,推荐 
+w = np.random.randn(n) * sqrt(2.0/n)
+
+5. svd ,对RNN效果比较好,可以有效提高收敛速度.
+
+二、数据预处理方式
+
+zero-center ,这个挺常用的.
+X -= np.mean(X, axis = 0) # zero-center 
+X /= np.std(X, axis = 0) # normalize
+PCA whitening,这个用的比较少.
+
+三、训练技巧
+
+1. 要做梯度归一化,即算出来的梯度除以minibatch size
+
+2. clip c(梯度裁剪): 限制最大梯度,其实是value = sqrt(w1^2+w2^2….),如果value超过了阈值,就算一个衰减系系数,让value的值等于阈值: 5,10,15
+
+3. dropout对小数据防止过拟合有很好的效果,值一般设为0.5,小数据上dropout+sgd效果更好. 
+dropout的位置比较有讲究, 对于RNN,建议放到输入->RNN与RNN->输出的位置.关于RNN如何用dropout,可以参考这篇论文:http://arxiv.org/abs/1409.2329
+adam,adadelta等,在小数据上,我这里实验的效果不如sgd,如果使用sgd的话,可以选择从1.0或者0.1的学习率开始,
+隔一段时间,在验证集上检查一下,如果cost没有下降,就对学习率减半.
+我看过很多论文都这么搞,我自己实验的结果也很好. 当然,也可以先用ada系列先跑,最后快收敛的时候,更换成sgd继续训练.同样也会有提升.
+除了gate之类的地方,需要把输出限制成0-1之外,尽量不要用sigmoid,可以用tanh或者relu之类的激活函数.
+
+4. rnn的dim和embdding size,一般从128上下开始调整. batch size,一般从128左右开始调整.batch size合适最重要,并不是越大越好.
+
+5. word2vec初始化,在小数据上,不仅可以有效提高收敛速度,也可以可以提高结果.
+
+6. 尽量对数据做shuffle
+
+7. LSTM 的forget gate的bias,用1.0或者更大的值做初始化,可以取得更好的结果,来自这篇论文:http://jmlr.org/proceedings/papers/v37/jozefowicz15.pdf, 我这里实验设成1.0,可以提高收敛速度.实际使用中,不同的任务,可能需要尝试不同的值.
