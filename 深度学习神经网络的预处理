@@ -1,0 +1,193 @@
+数据预处理在构建网络模型时是很重要的，往往能够决定训练结果。当然对于不同的数据集，预处理的方法都会有或多或少的特殊性和局限性。在这里介绍三种当前最为普遍被广泛使用的预处理方法。
+
+需要导入numpy库，即：（下同）
+import numpy as np
+
+假设数据矩阵X是一个N*D维的矩阵，其中N代表样本数目，D代表数据的维度。
+
+1.零均值
+这是数据处理阶段最为常用的方法。顾名思义，就是将每一维原始数据减去每一维数据的平均值，将结果代替原始数据，这就是零均值。
+在python中这个操作可以写成：
+
+X -= np.mean(X, axis = 0)
+
+
+2.归一化（normalization）
+归一化就是将原始数据归一到相同尺度，当前有两种归一化的方法
+
+第一种就是先将原始数据进行零均值，再将每一维的数据除以每一维数据的标准差，用代码来表示：
+
+X -= np.mean(X, axis = 0)
+X /= np.std(X, axis = 0)
+
+第二种就是将不同维度的数据归一到相同的数值区间，例如将每一维数据的最大最小值为1和-1，这种归一化仅仅当你认为不同的维度的数据应该具有相同的重要性的时候。
+而图片便不存在这种归一化，因为图片像素的范围已经是（0-255），已经是归一化的了。
+
+e.g. Left: original toy, 2-dimensional input data.
+     Middle: The data is 0-centered by subtracting the mean in each dimension
+             The data cloud is now cetered around the origin.
+     Right: Each dimension is additionally scaled by its standard deviation, the extent of 
+     the data is of unequal lenght in the middlell, but of equal length on the right
+看图：https://blog.csdn.net/coder_Gray/article/details/79677921
+
+3.PCA和白化（whitened）
+是另一种形式的预处理方法。首先我们将数据变成0均值的，然后计算数据的协方差矩阵来得到数据不同维度之间的相关性：
+
+X -= np.mean(X, axis = 0) #zero-center the data (important)
+cov = np.dot(X.T, X) / X.shape[0] #get the data covariance matrix, X.T means transpose of X
+
+协方差矩阵的第(i,j)个元素表示数据第i维和第j维特征的相关性，特别地，对角线上的元素表示方差。
+另外，协方差矩阵是对称并且半正定的。我们可以对上述协方差矩阵进行SVD分解：
+
+U,S,V = np.linalg.svd(cov)
+
+U矩阵的列为特征向量，S对角线上的元素是奇异值（等同于特征值的平方）。
+为了对数据去相关，我们首先将数据（0均值后的）投影到特征向量上：
+
+Xrot = np.dot(X, U) #decorrelate the data
+
+注意U的列是相互正交的向量，也因此它们可以被看成基向量。
+这种投影相当于将数据X旋转、投影到新的基向量轴上。
+如果我们再去计算Xrot的协方差矩阵的话，我们会发现它是一个对角阵，说明不同维度之间不再相关。
+np.linalg.svd的一个很好的特性在于返回的U是按照其特征值的大小排序的，排在前面的就是主方向，
+因此我们可以通过选取前几个特征向量来减少数据的维度，这就是PCA的降维方法： 
+
+Xrot_reduced = np.dot(X, U[:,:100]) #Xrot_reduced becomes [N x 100]
+
+PCA/Whitening: https://blog.csdn.net/coder_Gray/article/details/79677921
+
+In practice. 我们在这里提到PCA和白化是为了completeness,但是这些变换在CNN中并不会用到。
+但是，对于数据进行0均值处理是非常重要的，归一化也是常见的。 
+
+[常见陷阱]
+在进行数据的预处理时（比如计算数据均值），我们只能在训练数据上进行，然后应用到验证/测试数据上。
+如果我们对整个数据集-整个数据集的均值，然后再进行训练/验证/测试数据的分割的话，这样是不对的。
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+正确做法是计算训练数据的均值，然后分别把它从训练/验证/测试数据中减去。
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
+
+
+补充知识：
+np.array([[2],[1],[3]])
+输处single column 
+[2]
+[1]
+[3]
+np.transpose(np.array([[2,1,3]]))
+输出row vector [2 1 3]
+一个中括号输出series,两个中括号是dataframe
+
+To do a matrix multiplication or a matrix-vector multiplication we use the np.dot() method
+w = np.dot(A,V)
+==========================================
+import numpy as np
+a=np.array([[1,2]])
+>>>print('a的维度是：',a.ndim)
+>>>print('a的形状是：',a.shape)
+>>>print(a[0])
+>>>b=np.array([1,2])
+>>>print('b的维度是：',a.ndim)
+>>>print('b的形状是：',a.shape)
+>>>print(b[0])
+a的维度是： 2
+a的形状是： (1, 2)
+[1 2]
+b的维度是： 2
+b的形状是： (1, 2)
+1
+==========================================================
+
+Solving systems of equations with numpy
+==============================================
+One of the more common problems in linear algebra is solving a matrix-vector equation. 
+Here is an example. We seek the vector x that solves the equation
+
+A x = b
+
+where
+A = np.array([[2,1,-2],[3,0,1],[1,1-1]])
+b = np.transpose(np.array([[-3,5,-2]])
+
+To solve the system we do
+x = np.linalg.solve(A,b)
+
+Application: multiple linear regression
+===================================================
+In a multiple regression problem we seek a function that can map input data points to outcome values. 
+Each data point is a feature vector (x1 , x2 , …, xm) 
+composed of two or more data values that capture various features of the input.
+
+The formula to compute the β vector is
+
+β = (XT X)^-1*XT*y
+Assuming we have constructed the input matrix X and the outcomes vector y in numpy,
+the following code will compute the β vector:
+Xt = np.transpose(X)
+XtX = np.dot(Xt,X)
+Xty = np.dot(Xt,y)
+beta = np.linalg.solve(XtX,Xty)
+
+Here now is the source code for the example program.
+import csv
+import numpy as np
+
+def readData():
+    X = []
+    y = []
+    with open('Housing.csv') as f:
+        rdr = csv.reader(f)
+        # Skip the header row
+        next(rdr)
+        # Read X and y
+        for line in rdr:
+            xline = [1.0]
+            for s in line[:-1]:
+                xline.append(float(s))
+            X.append(xline)
+            y.append(float(line[-1]))
+    return (X,y)
+
+X0,y0 = readData()
+# Convert all but the last 10 rows of the raw data to numpy arrays
+d = len(X0)-10
+X = np.array(X0[:d])
+y = np.transpose(np.array([y0[:d]]))
+
+# Compute beta
+Xt = np.transpose(X)
+XtX = np.dot(Xt,X)
+Xty = np.dot(Xt,y)
+beta = np.linalg.solve(XtX,Xty)
+print(beta)
+
+# Make predictions for the last 10 rows in the data set
+for data,actual in zip(X0[d:],y0[d:]):
+    x = np.array([data])
+    prediction = np.dot(x,beta)
+    print('prediction = '+str(prediction[0,0])+' actual = '+str(actual))
+    
+Here are the outputs produced by the program:
+[[ -4.14106096e+03]
+ [  3.55197583e+00]
+ [  1.66328263e+03]
+ [  1.45465644e+04]
+ [  6.77755381e+03]
+ [  6.58750520e+03]
+ [  4.44683380e+03]
+ [  5.60834856e+03]
+ [  1.27979572e+04]
+ [  1.24091640e+04]
+ [  4.19931185e+03]
+ [  9.42215457e+03]]
+prediction = 97360.6550969 actual = 82500.0
+prediction = 71774.1659014 actual = 83000.0
+prediction = 92359.0891976 actual = 84000.0
+prediction = 77748.2742379 actual = 85000.0
+prediction = 91015.5903066 actual = 85000.0
+prediction = 97545.1179047 actual = 91500.0
+prediction = 97360.6550969 actual = 94000.0
+prediction = 106006.800756 actual = 103000.0
+prediction = 92451.6931269 actual = 105000.0
