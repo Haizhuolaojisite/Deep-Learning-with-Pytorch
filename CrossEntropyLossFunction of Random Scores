@@ -1,0 +1,23 @@
+If the neural network predicts random scores, what would be its loss function? Let's find it out in PyTorch. 
+The neural network is going to have 1000 classes,
+each having a random score. 
+For ground truth, it will have class 111. Calculate the loss function.
+
+
+# Import torch and torch.nn
+import torch
+import torch.nn as nn
+
+# Initialize logits and ground truth with a tensor containing the number 111
+logits = torch.rand(1,1000)
+ground_truth = torch.tensor([111])
+
+# Instantiate cross-entropy loss
+criterion = nn.CrossEntropyLoss()
+
+# Calculate and print the loss
+loss = criterion(logits,ground_truth)
+print(loss)
+
+<script.py> output:
+    tensor(7.4136)
