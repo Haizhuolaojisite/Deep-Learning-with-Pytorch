@@ -1,0 +1,68 @@
+The convolutions are used to extract features from the image
+
+While pooling is a way of feature selection, choosing the most dominant features from the image, or combining different features.
+Additionaly, they lower the resolutions of images, making the computations more efficient, making the learning invariant to translations.
+This means making the network robust to shifting(movements) of the image.
+
+Here you are going to practice using max-pooling in both OOP and functional way, and see for yourself that the produced results are 
+the same. We have already created and printed the image for you, and imported torch library in addition to torch.nn and torch.nn.Functional
+as F packages.
+
+Max pooling operator
+=====================================================================================
+tensor([[[[ 8.,  1.,  2.,  5.,  3.,  1.],
+          [ 6.,  0.,  0., -5.,  7.,  9.],
+          [ 1.,  9., -1., -2.,  2.,  6.],
+          [ 0.,  4.,  2., -3.,  4.,  3.],
+          [ 2., -1.,  4., -1., -2.,  3.],
+          [ 2., -4.,  5.,  9., -7.,  8.]]]])
+          
+# Build a pooling operator with size `2`.
+max_pooling = torch.nn.MaxPool2d(2)
+
+# Apply the pooling operator
+output_feature = max_pooling(im)
+
+# Use pooling operator in the image
+output_feature_F = F.max_pool2d(im,2)
+
+# print the results of both cases
+
+print(output_feature)
+print(output_feature_F)
+
+Average pooling operator
+=======================================================================================
+
+# Build a pooling operator with size `2`.
+avg_pooling = torch.nn.AvgPool2d(2)
+
+# Apply the pooling operator
+output_feature = avg_pooling(im)
+
+# Use pooling operator in the image
+output_feature_F = F.avg_pool2d(im,2)
+
+# print the results of both cases
+print(output_feature)
+print(output_feature_F)
+
+
+<script.py> output:
+    tensor([[[[ 3.7500,  0.5000,  5.0000],
+              [ 3.5000, -1.0000,  3.7500],
+              [-0.2500,  4.2500,  0.5000]]]])
+    tensor([[[[ 3.7500,  0.5000,  5.0000],
+              [ 3.5000, -1.0000,  3.7500],
+              [-0.2500,  4.2500,  0.5000]]]])
+
+
+
+<script.py> output:
+    tensor([[[[8., 5., 9.],
+              [9., 2., 6.],
+              [2., 9., 8.]]]])
+              
+    tensor([[[[8., 5., 9.],
+              [9., 2., 6.],
+              [2., 9., 8.]]]])
