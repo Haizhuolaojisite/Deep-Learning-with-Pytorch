@@ -1,0 +1,13 @@
+Dropout is used to regularize fully-connected layers. Batch-normalization is used to make the training of convolutional neural networks 
+
+more efficient, while at the same time having regularization effects. 
+
+You are going to implement the __init__ method of a small convolutional neural network, with batch-normalization. 
+ 
+The feature extraction part of the CNN will contain the following modules (in order): convolution, max-pool, activation, batch-norm, 
+ 
+convolution, max-pool, relu, batch-norm.
+
+
+ 
+ 
