@@ -12,6 +12,15 @@ For the moment, you are going to implement the __init__ method of the net.
 
 NB: We need 2 pooling layers, but we only need to instantiate a pooling layer once, 
 because each pooling layer will have the same configuration. 
+==============================================================================================================================
+
+1. torch.nn only supports mini-batches. The entire torch.nn package only supports inputs that are a mini-batch of samples, 
+and not a single sample.
+
+For example, nn.Conv2d will take in a 4D Tensor of nSamples x nChannels x Height x Width.
+
+2. If you have a single sample, just use input.unsqueeze(0) to add a fake batch dimension.
+============================================================================================================================
 
 class Net(nn.Module):
     def __init__(self):
