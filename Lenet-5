@@ -1,0 +1,118 @@
+from lenet import LeNet5
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torchvision.datasets.mnist import MNIST
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
+import visdom
+import onnx
+
+viz = visdom.Visdom() #使用参数进行设置
+
+#Normalize an tensor image with mean and standard deviation.
+  #Given mean: ``(M1,...,Mn)`` and std: ``(S1,..,Sn)`` for ``n`` channels, this transform
+  #will normalize each channel of the input ``torch.*Tensor`` 
+  #i.e.``input[channel] = (input[channel] - mean[channel]) / std[channel]``
+
+data_train = MNIST('./data/mnist', download = True, 
+                   transform = transforms.Compose([  #Compose这个类是用来管理各个transform
+                    transforms.Resize((32,32)),
+                    transforms.ToTensor()]))
+                    
+data_test = MNIST('./data/mnist',
+                  train = False,
+                  download = True,
+                  transform = transforms.Compose([
+                    transforms.Resize((32,32)),
+                    transforms.ToTensor()]))
+
+data_train_loader = DataLoader(data_train, batch_size = 256, shuffle = True, num_workers = 8)
+
+data_test_loader = DataLoader(data_test, batch_size = 1024, num_workers = 8)
+
+net = LeNet5()
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(net.parameters(), lr = 2e-3)
+
+cur_batch_win = None
+cur_batch_win_opts = {
+    'title': 'Epoch Loss Trace',
+    'xlabel':'Batch Number',
+    'ylabel':'Loss',
+    'width':1200,
+    'height':600
+  }
+  
+  
+  # global需要在函数内部声明，若在函数外声明，则函数依然无法操作x，
+  # 加了global，则可以在函数内部对函数外的对象进行操作了，也可以改变它的值了
+ df train(epoch):   
+    global cur_batch_win
+   
+    net.train()
+    
+    loss_list,batch_list=[],[]
+    
+    for i, (images, labels) in enumerate(data_train_loader):
+      optimizer.zero_grad() #zero parameter gradients
+      
+      outputs = net(inputs) #forward 
+      
+      loss = criterion(output, labels)
+      
+      loss_list.append(loss.detach().cpu().item()) #tensor and CPU,把数值取出
+      
+      batch_list.append(i + 1)
+ 
+ if i % 10 == 0: #模运算，取余数, %d整数）
+    print('Train - Epoch %d, Batch: %d, Loss: %f' %(epoch, i, loss.detach().cpu.item()))
+ 
+ #update visualization
+ # visdom 可以实现远程数据的可视化，对科学实验有很大帮助。
+ # 我们可以远程的发送图片和数据，并进行在ui界面显示出来，检查实验结果，或者debug
+ 
+ if viz.check_connection(): #检查服务器是否连接
+     cur_batch_win = viz.line(torch.Tensor(loss_list), torch.Tensor(batch_list),
+                              win = cur_batch_win, name='current_batch_loss',
+                              update=(None if cur_batch_win is None else 'replace'),
+                              opts = cur_batch_win_opts)
+      
+  loss.backward()
+  optimizer.step() 
+  
+  def test():
+    net.eval()
+    total_correct = 0
+    avg_loss = 0.0
+    for i, (images, labels) in enumerate(data_test_loader):
+      output = net(images)
+      avg_loss += criterion(output,labels).sum()
+      pred = output.detach().max(1)[1]
+      total_correct += pred.eq(labels.view_as(pred)).sum()
+    
+     avg_loss /= len(data_test)
+     print('Test Avg. Loss: %f, Accuracy: %f' % (avg_loss.detach().cpu().item(), float(total_correct) / len(data_test)))
+
+def train_and_test(epoch):
+    train(epoch)
+    test()
+
+    dummy_input = torch.randn(1, 1, 32, 32, requires_grad=True)
+    torch.onnx.export(net, dummy_input, "lenet.onnx")
+
+    onnx_model = onnx.load("lenet.onnx")
+    onnx.checker.check_model(onnx_model)
+
+
+def main():
+    for e in range(1, 16):
+        train_and_test(e)
+
+
+if __name__ == '__main__':
+    main()
+ 
+    
+  
+      
