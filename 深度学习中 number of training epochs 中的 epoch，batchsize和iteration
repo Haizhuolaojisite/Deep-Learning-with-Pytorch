@@ -1,0 +1,15 @@
+（1）iteration：表示1次迭代（也叫training step），每次迭代更新1次网络结构的参数；
+
+（2）batch-size：1次迭代所使用的样本量；
+
+（3）epoch：1个epoch表示过了1遍训练集中的所有样本。
+
+在深度学习领域中，常用带mini-batch的随机梯度下降算法（Stochastic Gradient Descent, SGD）训练深层结构，它有一个好处就是并不需要遍历全部的样本，
+当数据量非常大时十分有效。
+
+此时，可根据实际问题来定义epoch，例如定义10000次迭代为1个epoch，若每次迭代的batch-size设为256，那么1个epoch相当于过了2560000个训练样本。
+
+一次epoch=所有训练数据forward+backward后更新参数的过程。
+一次iteration=[batch size]个训练数据forward+backward后更新参数过程。
+另：一般是iteration译成“迭代”
+
